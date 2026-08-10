@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ShopLite microservices reference application">
+  <meta name="theme-color" content="#071426">
+  <title>ShopLite — Microservices, made visible</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="ShopLite home">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span>Shop<span>Lite</span></span>
+    </a>
+    <nav aria-label="Primary navigation">
+      <a href="#system">System</a>
+      <a href="#workflow">Workflow</a>
+      <a href="#activity">Activity</a>
+    </nav>
+    <span class="environment"><i></i> Local environment</span>
+  </header>
+
+  <main id="top">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span>Reference platform</span> Four services. One flow.</p>
+        <h1 id="hero-title">Microservices,<br><em>made visible.</em></h1>
+        <p class="hero-lead">
+          Create a customer and a product, place an order, and watch an
+          asynchronous notification travel across the ShopLite platform.
+        </p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#workflow">Run the workflow <span>→</span></a>
+          <button id="check-health" class="button button-ghost" type="button">
+            <span class="pulse-dot"></span><span class="button-label">Check all services</span>
+          </button>
+        </div>
+        <dl class="hero-stats">
+          <div><dt>4</dt><dd>Python APIs</dd></div>
+          <div><dt>4</dt><dd>Purpose-fit stores</dd></div>
+          <div><dt>1</dt><dd>Durable event queue</dd></div>
+        </dl>
+      </div>
+
+      <div class="system-map" aria-label="ShopLite service architecture">
+        <div class="map-glow" aria-hidden="true"></div>
+        <div class="map-heading">
+          <div>
+            <span class="map-kicker">Live architecture</span>
+            <strong>Request path</strong>
+          </div>
+          <span class="live-badge"><i></i> online</span>
+        </div>
+
+        <div class="ingress-node">
+          <span>ENTRY POINT</span>
+          <strong>shoplite.local</strong>
+        </div>
+
+        <div class="map-connector map-connector-top" aria-hidden="true"></div>
+        <div class="service-nodes">
+          <article class="service-node user">
+            <span class="node-code">US</span>
+            <div><strong>User</strong><small>PostgreSQL</small></div>
+          </article>
+          <article class="service-node catalog">
+            <span class="node-code">CA</span>
+            <div><strong>Catalog</strong><small>MongoDB</small></div>
+          </article>
+          <article class="service-node order">
+            <span class="node-code">OR</span>
+            <div><strong>Order</strong><small>PostgreSQL</small></div>
+          </article>
+          <article class="service-node notification">
+            <span class="node-code">NO</span>
+            <div><strong>Notify</strong><small>Redis</small></div>
+          </article>
+        </div>
+
+        <div class="event-rail">
+          <span class="rail-label">ASYNC</span>
+          <span class="rail-line" aria-hidden="true"><i></i></span>
+          <strong>order-created</strong>
+          <small>RabbitMQ</small>
+        </div>
+      </div>
+    </section>
+
+    <section id="system" class="system-health" aria-labelledby="system-title">
+      <div class="section-intro">
+        <div>
+          <p class="eyebrow">Platform pulse</p>
+          <h2 id="system-title">Every service, one glance.</h2>
+        </div>
+        <p>Readiness checks include each service's own database.</p>
+      </div>
+      <div id="service-status" class="status-grid" aria-live="polite">
+        <div class="status-card loading"><span class="status-icon">US</span><div><strong>User service</strong><small>Checking readiness…</small></div><i></i></div>
+        <div class="status-card loading"><span class="status-icon">CA</span><div><strong>Catalog service</strong><small>Checking readiness…</small></div><i></i></div>
+        <div class="status-card loading"><span class="status-icon">OR</span><div><strong>Order service</strong><small>Checking readiness…</small></div><i></i></div>
+        <div class="status-card loading"><span class="status-icon">NO</span><div><strong>Notification service</strong><small>Checking readiness…</small></div><i></i></div>
+      </div>
+    </section>
+
+    <section id="workflow" class="workflow-section" aria-labelledby="workflow-title">
+      <div class="workflow-heading">
+        <div>
+          <p class="eyebrow">Guided demo</p>
+          <h2 id="workflow-title">Take an order from idea to notification.</h2>
+          <p>Complete the steps in order. IDs are carried forward automatically.</p>
+        </div>
+        <div class="progress-wrap" aria-label="Workflow progress">
+          <span><strong id="progress-count">0</strong> of 4 complete</span>
+          <div class="progress-track"><i id="progress-bar"></i></div>
+        </div>
+      </div>
+
+      <div class="workflow-grid">
+        <article class="workflow-card" data-workflow-step="1">
+          <div class="card-accent"></div>
+          <div class="card-topline">
+            <span class="step-number">01</span>
+            <span class="service-tag tag-user">User service</span>
+          </div>
+          <h3>Create a customer</h3>
+          <p class="card-description">Start the journey with an identity stored in PostgreSQL.</p>
+          <form id="user-form">
+            <label>
+              <span>Full name</span>
+              <input name="name" autocomplete="name" required maxlength="120" placeholder="Amina Rahman">
+            </label>
+            <label>
+              <span>Email address</span>
+              <input name="email" type="email" autocomplete="email" required placeholder="amina@example.com">
+            </label>
+            <button class="form-submit" type="submit"><span>Create customer</span><i>→</i></button>
+          </form>
+          <div class="result-shell">
+            <div class="result-heading"><span>Response</span><button type="button" data-copy="user-result">Copy</button></div>
+            <pre id="user-result" class="result">Ready when you are.</pre>
+          </div>
+        </article>
+
+        <article class="workflow-card" data-workflow-step="2">
+          <div class="card-accent"></div>
+          <div class="card-topline">
+            <span class="step-number">02</span>
+            <span class="service-tag tag-catalog">Catalog service</span>
+          </div>
+          <h3>Add a product</h3>
+          <p class="card-description">Create flexible catalog data in a MongoDB document.</p>
+          <form id="product-form">
+            <label>
+              <span>Product name</span>
+              <input name="name" required maxlength="160" placeholder="Mechanical keyboard">
+            </label>
+            <label>
+              <span>Unit price</span>
+              <span class="money-input"><i>$</i><input name="price" type="number" min="0.01" step="0.01" required value="29.99"></span>
+            </label>
+            <button class="form-submit" type="submit"><span>Add to catalog</span><i>→</i></button>
+          </form>
+          <div class="result-shell">
+            <div class="result-heading"><span>Response</span><button type="button" data-copy="product-result">Copy</button></div>
+            <pre id="product-result" class="result">Ready when you are.</pre>
+          </div>
+        </article>
+
+        <article class="workflow-card" data-workflow-step="3">
+          <div class="card-accent"></div>
+          <div class="card-topline">
+            <span class="step-number">03</span>
+            <span class="service-tag tag-order">Order service</span>
+          </div>
+          <h3>Place the order</h3>
+          <p class="card-description">Validate customer and product over REST, then save the order.</p>
+          <form id="order-form">
+            <div class="field-row">
+              <label><span>User ID</span><input name="userId" type="number" min="1" required placeholder="1"></label>
+              <label><span>Quantity</span><input name="quantity" type="number" min="1" max="100" required value="1"></label>
+            </div>
+            <label>
+              <span>Product ID</span>
+              <input name="productId" required placeholder="Filled after step 2">
+            </label>
+            <button class="form-submit" type="submit"><span>Place order</span><i>→</i></button>
+          </form>
+          <div class="result-shell">
+            <div class="result-heading"><span>Response</span><button type="button" data-copy="order-result">Copy</button></div>
+            <pre id="order-result" class="result">Complete steps 1 and 2 first.</pre>
+          </div>
+        </article>
+
+        <article class="workflow-card" data-workflow-step="4">
+          <div class="card-accent"></div>
+          <div class="card-topline">
+            <span class="step-number">04</span>
+            <span class="service-tag tag-notification">Notification service</span>
+          </div>
+          <h3>Watch the event land</h3>
+          <p class="card-description">Read the notification created asynchronously through RabbitMQ.</p>
+          <form id="notification-form">
+            <label>
+              <span>User ID</span>
+              <input name="userId" type="number" min="1" required placeholder="Filled after step 1">
+            </label>
+            <div class="event-note"><i></i><span>The consumer may need a moment to process the event.</span></div>
+            <button class="form-submit" type="submit"><span>Load notifications</span><i>↻</i></button>
+          </form>
+          <div class="result-shell">
+            <div class="result-heading"><span>Response</span><button type="button" data-copy="notification-result">Copy</button></div>
+            <pre id="notification-result" class="result">No notifications loaded.</pre>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="activity" class="activity-section" aria-labelledby="activity-title">
+      <div class="activity-copy">
+        <p class="eyebrow">Request timeline</p>
+        <h2 id="activity-title">See the platform think.</h2>
+        <p>Each successful request and failure appears here, giving you a concise story for the assignment demo.</p>
+        <button id="clear-log" class="text-button" type="button">Clear activity <span>×</span></button>
+      </div>
+      <div class="activity-console">
+        <div class="console-topbar">
+          <div><i></i><i></i><i></i></div>
+          <span>shoplite / activity</span>
+          <small>LIVE</small>
+        </div>
+        <ol id="activity-log" aria-live="polite">
+          <li class="empty-log"><span>›</span> Waiting for your first action…</li>
+        </ol>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <a class="brand footer-brand" href="#top">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span>Shop<span>Lite</span></span>
+    </a>
+    <p>FastAPI · PostgreSQL · MongoDB · Redis · RabbitMQ</p>
+    <a href="/docs">Open API docs <span>↗</span></a>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite">
+    <span id="toast-icon">✓</span>
+    <p id="toast-message">Done</p>
+  </div>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

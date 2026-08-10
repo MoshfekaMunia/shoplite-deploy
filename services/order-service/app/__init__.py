@@ -1,0 +1,1 @@
+"""ShopLite order service."""
