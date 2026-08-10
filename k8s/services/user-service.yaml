@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: shoplite
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+        - name: user-service
+          image: shoplite/user-service:v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: USER_DB_USER
+              valueFrom:
+                secretKeyRef: { name: shoplite-secrets, key: USER_DB_USER }
+            - name: USER_DB_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: shoplite-secrets, key: USER_DB_PASSWORD }
+            - name: USER_DB_NAME
+              valueFrom:
+                configMapKeyRef: { name: shoplite-config, key: USER_DB_NAME }
+            - name: DATABASE_URL
+              value: "postgresql+psycopg://$(USER_DB_USER):$(USER_DB_PASSWORD)@user-db:5432/$(USER_DB_NAME)"
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef: { name: shoplite-config, key: LOG_LEVEL }
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests: { cpu: "100m", memory: "128Mi" }
+            limits: { cpu: "250m", memory: "256Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: shoplite
+spec:
+  selector:
+    app: user-service
+  ports:
+    - port: 8000
+      targetPort: 8000
