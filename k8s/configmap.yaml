@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shoplite-config
+  namespace: shoplite
+data:
+  LOG_LEVEL: "INFO"
+  USER_DB_NAME: "shoplite_users"
+  ORDER_DB_NAME: "shoplite_orders"
+  MONGO_DB_NAME: "shoplite_catalog"
+  USER_SERVICE_URL: "http://user-service:8000"
+  CATALOG_SERVICE_URL: "http://catalog-service:8000"
+  HTTP_TIMEOUT_SECONDS: "3"
+  NOTIFICATION_TTL_SECONDS: "86400"
