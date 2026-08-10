@@ -1,0 +1,1 @@
+"""ShopLite user service."""

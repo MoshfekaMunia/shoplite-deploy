@@ -1,0 +1,208 @@
+name: shoplite
+
+services:
+  user-service:
+    build:
+      context: ./services/user-service
+    environment:
+      DATABASE_URL: postgresql+psycopg://${USER_DB_USER}:${USER_DB_PASSWORD}@user-db:5432/${USER_DB_NAME}
+      LOG_LEVEL: INFO
+    ports:
+      - "8001:8000"
+    depends_on:
+      user-db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz', timeout=2)
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks: [shoplite]
+
+  catalog-service:
+    build:
+      context: ./services/catalog-service
+    environment:
+      MONGO_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@catalog-db:27017/${MONGO_DB_NAME}?authSource=admin
+      MONGO_DB_NAME: ${MONGO_DB_NAME}
+      LOG_LEVEL: INFO
+    ports:
+      - "8002:8000"
+    depends_on:
+      catalog-db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz', timeout=2)
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks: [shoplite]
+
+  order-service:
+    build:
+      context: ./services/order-service
+    environment:
+      DATABASE_URL: postgresql+psycopg://${ORDER_DB_USER}:${ORDER_DB_PASSWORD}@order-db:5432/${ORDER_DB_NAME}
+      USER_SERVICE_URL: http://user-service:8000
+      CATALOG_SERVICE_URL: http://catalog-service:8000
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
+      HTTP_TIMEOUT_SECONDS: "3"
+      LOG_LEVEL: INFO
+    ports:
+      - "8003:8000"
+    depends_on:
+      order-db:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+      catalog-service:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz', timeout=2)
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks: [shoplite]
+
+  notification-service:
+    build:
+      context: ./services/notification-service
+    environment:
+      REDIS_URL: redis://:${REDIS_PASSWORD}@notification-db:6379/0
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
+      NOTIFICATION_TTL_SECONDS: "86400"
+      LOG_LEVEL: INFO
+    ports:
+      - "8004:8000"
+    depends_on:
+      notification-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz', timeout=2)
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks: [shoplite]
+
+  user-db:
+    image: postgres:16.4-alpine
+    environment:
+      POSTGRES_DB: ${USER_DB_NAME}
+      POSTGRES_USER: ${USER_DB_USER}
+      POSTGRES_PASSWORD: ${USER_DB_PASSWORD}
+    volumes:
+      - user-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    networks: [shoplite]
+
+  catalog-db:
+    image: mongo:7.0.12
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DB_NAME}
+    volumes:
+      - catalog-data:/data/db
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - mongosh --quiet --username "$$MONGO_INITDB_ROOT_USERNAME" --password "$$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --eval "db.adminCommand('ping').ok" | grep 1
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+    networks: [shoplite]
+
+  order-db:
+    image: postgres:16.4-alpine
+    environment:
+      POSTGRES_DB: ${ORDER_DB_NAME}
+      POSTGRES_USER: ${ORDER_DB_USER}
+      POSTGRES_PASSWORD: ${ORDER_DB_PASSWORD}
+    volumes:
+      - order-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    networks: [shoplite]
+
+  notification-db:
+    image: redis:7.2.5-alpine
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    volumes:
+      - notification-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    restart: unless-stopped
+    networks: [shoplite]
+
+  rabbitmq:
+    image: rabbitmq:3.13.6-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+    networks: [shoplite]
+
+volumes:
+  user-data:
+  catalog-data:
+  order-data:
+  notification-data:
+  rabbitmq-data:
+
+networks:
+  shoplite:
+    driver: bridge
+
