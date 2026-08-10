@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog-service
+  namespace: shoplite
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: catalog-service
+  template:
+    metadata:
+      labels:
+        app: catalog-service
+    spec:
+      containers:
+        - name: catalog-service
+          image: shoplite/catalog-service:v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: MONGO_USER
+              valueFrom:
+                secretKeyRef: { name: shoplite-secrets, key: MONGO_USER }
+            - name: MONGO_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: shoplite-secrets, key: MONGO_PASSWORD }
+            - name: MONGO_DB_NAME
+              valueFrom:
+                configMapKeyRef: { name: shoplite-config, key: MONGO_DB_NAME }
+            - name: MONGO_URI
+              value: "mongodb://$(MONGO_USER):$(MONGO_PASSWORD)@catalog-db:27017/$(MONGO_DB_NAME)?authSource=admin"
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef: { name: shoplite-config, key: LOG_LEVEL }
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests: { cpu: "100m", memory: "128Mi" }
+            limits: { cpu: "250m", memory: "256Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalog-service
+  namespace: shoplite
+spec:
+  selector:
+    app: catalog-service
+  ports:
+    - port: 8000
+      targetPort: 8000
